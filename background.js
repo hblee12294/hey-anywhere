@@ -1,5 +1,5 @@
-// Collection of quotes in different languages
-const quotes = {
+// Collection of sentences in different languages
+const content = {
   english: [
     "The greatest glory in living lies not in never falling, but in rising every time we fall. Our greatest weakness lies in giving up. The surest way to succeed is always to try just one more time.",
     "Life is like riding a bicycle. To keep your balance, you must keep moving. The only way to do great work is to love what you do.",
@@ -104,14 +104,14 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     const language = info.menuItemId.replace("hey_", "");
 
     // Get random quote from selected language
-    const languageQuotes = quotes[language];
-    const randomQuote =
-      languageQuotes[Math.floor(Math.random() * languageQuotes.length)];
+    const languageContent = content[language];
+    const randomContent =
+      languageContent[Math.floor(Math.random() * languageContent.length)];
 
     // Send quote to content script
     chrome.tabs.sendMessage(tab.id, {
-      action: "fillQuote",
-      quote: randomQuote,
+      action: "fillContent",
+      content: randomContent,
     });
   }
 });

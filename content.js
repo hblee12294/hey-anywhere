@@ -1,6 +1,6 @@
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "fillQuote") {
+  if (message.action === "fillContent") {
     // Get the active element (input or textarea)
     const activeElement = document.activeElement;
 
@@ -10,8 +10,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       (activeElement.tagName === "INPUT" ||
         activeElement.tagName === "TEXTAREA")
     ) {
-      // Set the value of the input/textarea to the quote
-      activeElement.value = message.quote;
+      // Set the value of the input/textarea to the content
+      activeElement.value = message.content;
 
       // Trigger input event to ensure any listeners are notified
       const event = new Event("input", { bubbles: true });

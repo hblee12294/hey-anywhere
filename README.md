@@ -1,4 +1,4 @@
-# Lorem Anywhere Chrome Extension
+# Hey-Anywhere Chrome Extension
 
 A Chrome extension that allows you to fill any input or textarea with inspiring quotes in multiple languages.
 

@@ -12,7 +12,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       activeElement.tagName === "INPUT" ||
       activeElement.tagName === "TEXTAREA"
     ) {
-      activeElement.value = message.content;
+      const start = activeElement.selectionStart;
+      const end = activeElement.selectionEnd;
+      const currentValue = activeElement.value;
+
+      // Insert content at cursor position
+      activeElement.value =
+        currentValue.slice(0, start) +
+        message.content +
+        currentValue.slice(end);
+
+      // Move cursor to end of inserted content
+      activeElement.setSelectionRange(
+        start + message.content.length,
+        start + message.content.length
+      );
 
       const event = new Event("input", { bubbles: true });
 
@@ -20,7 +34,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     // Handle contenteditable elements
     else if (activeElement.isContentEditable) {
-      activeElement.textContent = message.content;
+      const selection = window.getSelection();
+      const range = selection.getRangeAt(0);
+
+      // Delete any selected text
+      range.deleteContents();
+
+      // Insert new content at cursor position
+      const textNode = document.createTextNode(message.content);
+      range.insertNode(textNode);
+
+      // Move cursor to end of inserted content
+      range.setStartAfter(textNode);
+      range.setEndAfter(textNode);
+      selection.removeAllRanges();
+      selection.addRange(range);
 
       const event = new InputEvent("input", {
         bubbles: true,

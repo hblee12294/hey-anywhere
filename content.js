@@ -14,7 +14,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     ) {
       activeElement.value = message.content;
 
-      // Trigger input event
       const event = new Event("input", { bubbles: true });
 
       activeElement.dispatchEvent(event);
@@ -23,7 +22,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     else if (activeElement.isContentEditable) {
       activeElement.textContent = message.content;
 
-      // Trigger input event for contenteditable
       const event = new InputEvent("input", {
         bubbles: true,
         cancelable: true,

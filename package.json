@@ -1,0 +1,14 @@
+{
+  "name": "hey-fill",
+  "version": "1.0.0",
+  "description": "Fill inputs with random sentences in multiple languages",
+  "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "watch": "webpack --config webpack.config.js --watch"
+  },
+  "devDependencies": {
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4",
+    "copy-webpack-plugin": "^12.0.2"
+  }
+} 

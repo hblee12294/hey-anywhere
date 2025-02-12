@@ -1,4 +1,7 @@
 import { languages } from "./config.js";
+import tippy from "tippy.js";
+import "tippy.js/dist/tippy.css";
+import "tippy.js/themes/light.css";
 
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -63,44 +66,79 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Update the languages array
-const displayLanguages = languages.map(
-  (lang) => lang.charAt(0).toUpperCase() + lang.slice(1)
-);
+// Create the language menu content
+const createLanguageMenu = () => {
+  const div = document.createElement("div");
+  div.className = "ai-language-menu";
+
+  languages.forEach((lang) => {
+    const button = document.createElement("button");
+    button.textContent = lang.charAt(0).toUpperCase() + lang.slice(1);
+    button.onclick = () => {
+      if (lastFocusedElement) {
+        lastFocusedElement.focus();
+
+        if (lastFocusedElement.isContentEditable && lastSelectionRange) {
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(lastSelectionRange);
+        }
+
+        chrome.runtime.sendMessage({
+          action: "requestContent",
+          language: lang,
+        });
+
+        // Hide both tippys
+        // mainTippy.hide();
+        // // Find and hide the language menu tippy
+        // const languageMenuTippy =
+        //   document.querySelector(".ai-fill-button")._tippy;
+        // if (languageMenuTippy) {
+        //   languageMenuTippy.hide();
+        // }
+      }
+    };
+    div.appendChild(button);
+  });
+
+  return div;
+};
+
+// Create the main AI Fill button
+const createMainButton = () => {
+  const button = document.createElement("button");
+  button.className = "ai-fill-button";
+  button.textContent = "AI Fill";
+  return button;
+};
 
 // Create and add styles
 const style = document.createElement("style");
 style.textContent = `
   .ai-fill-button {
-    position: absolute;
-    background: #4CAF50;
+    background: red;
     color: white;
     border: none;
     border-radius: 4px;
     padding: 5px 10px;
     cursor: pointer;
-    z-index: 10000;
     font-size: 14px;
   }
-  .ai-language-menu {
-    position: absolute;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    display: none;
-    z-index: 10001;
-    max-height: 300px;
-    overflow-y: auto;
+  .ai-fill-button:hover {
+    background: #45a049;
   }
   .ai-language-menu button {
     display: block;
     width: 100%;
     padding: 8px 16px;
+    margin: 4px 0;
     border: none;
     background: none;
     text-align: left;
     cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s;
   }
   .ai-language-menu button:hover {
     background: #f0f0f0;
@@ -108,17 +146,51 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Create UI elements
-const fillButton = document.createElement("button");
-fillButton.className = "ai-fill-button";
-fillButton.textContent = "AI Fill";
-fillButton.style.display = "none";
+// Create an invisible anchor element for the main tippy
+const anchor = document.createElement("div");
+anchor.style.display = "none";
+document.body.appendChild(anchor);
 
-const languageMenu = document.createElement("div");
-languageMenu.className = "ai-language-menu";
-
-document.body.appendChild(fillButton);
-document.body.appendChild(languageMenu);
+// Initialize main tippy (AI Fill button)
+const mainTippy = tippy(anchor, {
+  content: createMainButton(),
+  trigger: "manual",
+  placement: "top",
+  theme: "light",
+  interactive: true,
+  animation: "scale",
+  appendTo: document.body,
+  hideOnClick: false,
+  onMount(instance) {
+    // Initialize language menu tippy on the AI Fill button
+    tippy(instance.popper.querySelector(".ai-fill-button"), {
+      content: createLanguageMenu(),
+      // trigger: "mouseenter",
+      trigger: "click",
+      hideOnClick: false,
+      placement: "right-start",
+      theme: "light",
+      arrow: true,
+      interactive: true,
+      animation: "scale",
+      appendTo: document.body,
+      delay: [0, 200], // No delay on show, small delay on hide
+      onShow(instance) {
+        // Ensure main tippy stays visible while language menu is open
+        instance._mainVisible = true;
+      },
+      onHide(instance) {
+        instance._mainVisible = false;
+        // Small delay to allow clicking menu items
+        setTimeout(() => {
+          if (!instance._mainVisible) {
+            mainTippy.hide();
+          }
+        }, 100);
+      },
+    });
+  },
+});
 
 // Track the last focused editable element and its selection/range
 let lastFocusedElement = null;
@@ -135,7 +207,6 @@ document.addEventListener("click", (e) => {
     target.tagName === "TEXTAREA"
   ) {
     lastFocusedElement = target;
-    // Store selection range for contenteditable elements
     if (target.isContentEditable) {
       const selection = window.getSelection();
       if (selection.rangeCount > 0) {
@@ -143,59 +214,48 @@ document.addEventListener("click", (e) => {
       }
     }
 
-    // Position the button near the cursor
-    const rect = target.getBoundingClientRect();
-    fillButton.style.display = "block";
-    fillButton.style.top = `${rect.top + window.scrollY - 30}px`;
-    fillButton.style.left = `${rect.left + window.scrollX}px`;
+    // Get cursor position
+    let rect;
+    if (target.isContentEditable) {
+      rect = lastSelectionRange.getBoundingClientRect();
+    } else {
+      // For input/textarea, use the element's position
+      rect = target.getBoundingClientRect();
+      const caretPos = target.selectionStart;
+      // Create a temporary element to measure text width
+      const temp = document.createElement("div");
+      temp.style.position = "absolute";
+      temp.style.visibility = "hidden";
+      temp.style.whiteSpace = "pre";
+      temp.style.font = window.getComputedStyle(target).font;
+      temp.textContent = target.value.substring(0, caretPos);
+      document.body.appendChild(temp);
+      const textWidth = temp.getBoundingClientRect().width;
+      document.body.removeChild(temp);
+      rect = {
+        top: rect.top,
+        left: rect.left + textWidth,
+        bottom: rect.bottom,
+        right: rect.left + textWidth,
+      };
+    }
+
+    // Show main tippy above the cursor position
+    mainTippy.setProps({
+      getReferenceClientRect: () => ({
+        width: 0,
+        height: 0,
+        top: rect.top + window.scrollY,
+        bottom: rect.top + window.scrollY,
+        left: rect.left + window.scrollX,
+        right: rect.left + window.scrollX,
+      }),
+    });
+    mainTippy.show();
   } else {
-    // Hide button and menu when clicking elsewhere
-    if (!fillButton.contains(e.target) && !languageMenu.contains(e.target)) {
-      fillButton.style.display = "none";
-      languageMenu.style.display = "none";
+    // Hide when clicking elsewhere
+    if (!e.target.closest(".tippy-box")) {
+      mainTippy.hide();
     }
-  }
-});
-
-// Create language menu buttons
-languageMenu.innerHTML = ""; // Clear existing buttons
-displayLanguages.forEach((displayLang) => {
-  const button = document.createElement("button");
-  button.textContent = displayLang;
-  button.onclick = () => {
-    if (lastFocusedElement) {
-      lastFocusedElement.focus();
-
-      if (lastFocusedElement.isContentEditable && lastSelectionRange) {
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(lastSelectionRange);
-      }
-
-      chrome.runtime.sendMessage({
-        action: "requestContent",
-        language: displayLang.toLowerCase(),
-      });
-    }
-    languageMenu.style.display = "none";
-    fillButton.style.display = "none";
-  };
-  languageMenu.appendChild(button);
-});
-
-// Toggle language menu when clicking the fill button
-fillButton.onclick = (e) => {
-  e.stopPropagation();
-  const buttonRect = fillButton.getBoundingClientRect();
-  languageMenu.style.display =
-    languageMenu.style.display === "block" ? "none" : "block";
-  languageMenu.style.top = `${buttonRect.bottom + window.scrollY + 5}px`;
-  languageMenu.style.left = `${buttonRect.left + window.scrollX}px`;
-};
-
-// Hide menu when clicking outside
-document.addEventListener("click", (e) => {
-  if (!languageMenu.contains(e.target) && !fillButton.contains(e.target)) {
-    languageMenu.style.display = "none";
   }
 });

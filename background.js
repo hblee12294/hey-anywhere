@@ -1,4 +1,5 @@
-import { languages, content } from "./config.js";
+import { languages } from "./config.js";
+import { getRandomContent } from "./utils";
 
 // Create context menu items
 chrome.runtime.onInstalled.addListener(() => {
@@ -19,12 +20,6 @@ chrome.runtime.onInstalled.addListener(() => {
     });
   });
 });
-
-// Function to get random content for a language
-function getRandomContent(language) {
-  const languageContent = content[language.toLowerCase()];
-  return languageContent[Math.floor(Math.random() * languageContent.length)];
-}
 
 // Handle context menu click
 chrome.contextMenus.onClicked.addListener((info, tab) => {

@@ -1,6 +1,10 @@
+import ReactDOM from "react-dom/client";
+import { Popup } from "@/components/Popup.tsx";
+
 export default defineContentScript({
-  matches: ["*://*/*"],
-  main() {
+  matches: ["<all_urls>"],
+
+  main(ctx) {
     browser.runtime.onMessage.addListener((message) => {
       if (message.action === "fillContent") {
         const activeElement = document.activeElement;
@@ -66,5 +70,29 @@ export default defineContentScript({
         }
       }
     });
+
+    const ui = createIntegratedUi(ctx, {
+      position: "inline",
+      anchor: "body",
+      onMount: (container) => {
+        // Create a root on the UI container and render a component
+        const root = ReactDOM.createRoot(container);
+        root.render(
+          <div>
+            <Popup>
+              <button>Hello</button>
+            </Popup>
+          </div>
+        );
+        return root;
+      },
+      onRemove: (root) => {
+        // Unmount the root when the UI is removed
+        root?.unmount();
+      },
+    });
+
+    // Call mount to add the UI to the DOM
+    ui.mount();
   },
 });

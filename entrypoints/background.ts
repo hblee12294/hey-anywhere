@@ -40,14 +40,14 @@ export default defineBackground(() => {
   });
 
   // Handle button click from content script
-  // browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  //   if (message.action === "requestContent") {
-  //     const randomContent = getRandomContent(message.language);
-
-  //     chrome.tabs.sendMessage(sender.tab.id, {
-  //       action: "fillContent",
-  //       content: randomContent,
-  //     });
-  //   }
-  // });
+  browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "requestContent" && sender.tab?.id) {
+      const randomContent = getRandomContent(message.language);
+      
+      chrome.tabs.sendMessage(sender.tab.id, {
+        action: "fillContent",
+        content: randomContent,
+      });
+    }
+  });
 });

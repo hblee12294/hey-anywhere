@@ -34,9 +34,11 @@ import {
   useRef,
   useState,
   forwardRef,
-  ButtonHTMLAttributes,
   FocusEvent,
   MouseEvent,
+  cloneElement,
+  isValidElement,
+  HTMLAttributes,
 } from "react";
 
 const MenuContext = createContext<{
@@ -54,15 +56,15 @@ const MenuContext = createContext<{
 });
 
 interface MenuProps {
-  label: string;
+  node: ReactNode;
   nested?: boolean;
   children?: ReactNode;
 }
 
 export const MenuComponent = forwardRef<
-  HTMLButtonElement,
-  MenuProps & HTMLProps<HTMLButtonElement>
->(({ children, label, ...props }, forwardedRef) => {
+  HTMLElement,
+  MenuProps & HTMLProps<HTMLElement>
+>(({ children, node, ...props }, forwardedRef) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasFocusInside, setHasFocusInside] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -82,7 +84,7 @@ export const MenuComponent = forwardRef<
     nodeId,
     open: isOpen,
     onOpenChange: setIsOpen,
-    placement: isNested ? "right-start" : "bottom-start",
+    placement: "right-start",
     middleware: [
       offset({ mainAxis: isNested ? 0 : 4, alignmentAxis: isNested ? -4 : 0 }),
       flip(),
@@ -152,34 +154,31 @@ export const MenuComponent = forwardRef<
 
   return (
     <FloatingNode id={nodeId}>
-      <button
-        ref={useMergeRefs([refs.setReference, item.ref, forwardedRef])}
-        tabIndex={
-          !isNested ? undefined : parent.activeIndex === item.index ? 0 : -1
-        }
-        role={isNested ? "menuitem" : undefined}
-        data-open={isOpen ? "" : undefined}
-        data-nested={isNested ? "" : undefined}
-        data-focus-inside={hasFocusInside ? "" : undefined}
-        className={isNested ? "MenuItem" : "RootMenu"}
-        {...getReferenceProps(
-          parent.getItemProps({
-            ...props,
-            onFocus(event: FocusEvent<HTMLButtonElement>) {
-              props.onFocus?.(event);
-              setHasFocusInside(false);
-              parent.setHasFocusInside(true);
-            },
-          })
-        )}
-      >
-        {label}
-        {isNested && (
-          <span aria-hidden style={{ marginLeft: 10, fontSize: 10 }}>
-            ▶
-          </span>
-        )}
-      </button>
+      {isValidElement(node) &&
+        cloneElement(node, {
+          ...(props as any),
+          ref: useMergeRefs([refs.setReference, item.ref, forwardedRef]),
+          tabIndex: !isNested
+            ? undefined
+            : parent.activeIndex === item.index
+            ? 0
+            : -1,
+          role: isNested ? "menuitem" : undefined,
+          "data-open": isOpen ? "" : undefined,
+          "data-nested": isNested ? "" : undefined,
+          "data-focus-inside": hasFocusInside ? "" : undefined,
+          className: isNested ? "MenuItem" : "RootMenu",
+          ...getReferenceProps(
+            parent.getItemProps({
+              ...props,
+              onFocus(event: FocusEvent<HTMLButtonElement>) {
+                props.onFocus?.(event);
+                setHasFocusInside(false);
+                parent.setHasFocusInside(true);
+              },
+            })
+          ),
+        })}
 
       <MenuContext.Provider
         value={{
@@ -217,29 +216,27 @@ export const MenuComponent = forwardRef<
 });
 
 interface MenuItemProps {
-  label: string;
-  disabled?: boolean;
+  node: ReactNode;
 }
 
 export const MenuItem = forwardRef<
-  HTMLButtonElement,
-  MenuItemProps & ButtonHTMLAttributes<HTMLButtonElement>
->(({ label, disabled, ...props }, forwardedRef) => {
+  HTMLElement,
+  MenuItemProps & HTMLAttributes<HTMLElement>
+>(({ node, ...props }, forwardedRef) => {
   const menu = useContext(MenuContext);
-  const item = useListItem({ label: disabled ? null : label });
+  const item = useListItem();
   const tree = useFloatingTree();
   const isActive = item.index === menu.activeIndex;
 
   return (
-    <button
-      {...props}
-      ref={useMergeRefs([item.ref, forwardedRef])}
-      type="button"
-      role="menuitem"
-      className="MenuItem"
-      tabIndex={isActive ? 0 : -1}
-      disabled={disabled}
-      {...menu.getItemProps({
+    isValidElement(node) &&
+    cloneElement(node, {
+      ...(props as any),
+      ref: useMergeRefs([item.ref, forwardedRef]),
+      role: "menuitem",
+      className: "MenuItem",
+      tabIndex: isActive ? 0 : -1,
+      ...menu.getItemProps({
         onClick(event: MouseEvent<HTMLButtonElement>) {
           props.onClick?.(event);
           tree?.events.emit("click");
@@ -248,10 +245,8 @@ export const MenuItem = forwardRef<
           props.onFocus?.(event);
           menu.setHasFocusInside(true);
         },
-      })}
-    >
-      {label}
-    </button>
+      }),
+    })
   );
 });
 

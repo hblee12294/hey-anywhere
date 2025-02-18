@@ -1,6 +1,7 @@
 import ReactDOM from "react-dom/client";
 import { Popup } from "@/components/Popup.tsx";
 import { Menu, MenuItem } from "@/components/DropdownMenu.tsx";
+import { LANGUAGES } from "@/data";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
@@ -9,6 +10,8 @@ export default defineContentScript({
     browser.runtime.onMessage.addListener((message) => {
       if (message.action === "fillContent") {
         const activeElement = document.activeElement;
+
+        console.log("fillContent", message, activeElement);
 
         if (!activeElement) {
           return;
@@ -79,25 +82,22 @@ export default defineContentScript({
         // Create a root on the UI container and render a component
         const root = ReactDOM.createRoot(container);
         root.render(
-          <div id="fill-content-popup">
-            <Popup>
-              <button onClick={() => console.log("Hello")}>Hello</button>
-
-              <Menu label="Edit">
-                <MenuItem label="Undo" onClick={() => console.log("Undo")} />
-                <MenuItem label="Redo" disabled />
-                <Menu label="Copy as">
-                  <MenuItem label="Text" />
-                  <MenuItem label="Video" />
-                  <Menu label="Image">
-                    <MenuItem label=".png" />
-                    <MenuItem label=".jpg" />
-                  </Menu>
-                  <MenuItem label="Audio" />
-                </Menu>
-              </Menu>
-            </Popup>
-          </div>
+          <Popup>
+            <Menu node={<div>Hey</div>}>
+              {LANGUAGES.map((language) => (
+                <MenuItem
+                  node={<div key={language}>{language}</div>}
+                  onClick={() => {
+                    // Send message to background script to get random content
+                    browser.runtime.sendMessage({
+                      action: "requestContent",
+                      language: language,
+                    });
+                  }}
+                />
+              ))}
+            </Menu>
+          </Popup>
         );
         return root;
       },

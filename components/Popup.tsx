@@ -20,10 +20,14 @@ import {
   FloatingFocusManager,
 } from "@floating-ui/react";
 
+interface PopupProps {
+  onPopupOpen?: (element: HTMLElement) => void;
+}
+
 export const Popup = forwardRef<
   HTMLButtonElement,
-  React.HTMLProps<HTMLButtonElement>
->(({ children }, forwardedRef) => {
+  React.HTMLProps<HTMLButtonElement> & PopupProps
+>(({ children, onPopupOpen }, forwardedRef) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const { refs, floatingStyles, context } = useFloating({
@@ -40,10 +44,9 @@ export const Popup = forwardRef<
     whileElementsMounted: autoUpdate,
   });
 
-  const role = useRole(context, { role: "menu" });
   const dismiss = useDismiss(context);
 
-  const { getFloatingProps, getItemProps } = useInteractions([role, dismiss]);
+  const { getFloatingProps, getItemProps } = useInteractions([dismiss]);
 
   useEffect(() => {
     function onMouseUp(e: MouseEvent) {
@@ -58,6 +61,8 @@ export const Popup = forwardRef<
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA"
       ) {
+        onPopupOpen?.(target);
+
         refs.setPositionReference({
           getBoundingClientRect() {
             return {
@@ -87,10 +92,10 @@ export const Popup = forwardRef<
   return (
     <FloatingPortal>
       {isOpen && (
-        <FloatingFocusManager context={context} initialFocus={refs.floating}>
+        <FloatingFocusManager context={context} disabled={true}>
           <div
             ref={refs.setFloating}
-            style={floatingStyles}
+            style={{ ...floatingStyles, zIndex: 1000 }}
             {...getFloatingProps()}
           >
             {Children.map(
@@ -99,16 +104,7 @@ export const Popup = forwardRef<
                 isValidElement(child) &&
                 cloneElement(
                   child,
-                  getItemProps({
-                    //   onClick() {
-                    //     child.props.onClick?.();
-                    //     setIsOpen(false);
-                    //   },
-                    //   onMouseUp() {
-                    //     child.props.onClick?.();
-                    //     setIsOpen(false);
-                    //   },
-                  })
+                  getItemProps()
                 )
             )}
           </div>

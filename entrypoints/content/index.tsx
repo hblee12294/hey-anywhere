@@ -3,74 +3,126 @@ import { Popup } from "@/components/Popup.tsx";
 import { Menu, MenuItem } from "@/components/DropdownMenu.tsx";
 import { LANGUAGES } from "@/data";
 
+function isInputElement(
+  element: Element | null
+): element is HTMLInputElement | HTMLTextAreaElement {
+  if (!element) {
+    return false;
+  }
+
+  return element.tagName === "INPUT" || element.tagName === "TEXTAREA";
+}
+
+function isContentEditableElement(
+  element: Element | null
+): element is HTMLElement {
+  if (!element) {
+    return false;
+  }
+
+  return (element as HTMLElement).isContentEditable;
+}
+
 export default defineContentScript({
   matches: ["<all_urls>"],
 
   main(ctx) {
+    let lastActiveElement: HTMLElement | null = null;
+
     browser.runtime.onMessage.addListener((message) => {
       if (message.action === "fillContent") {
-        const activeElement = document.activeElement;
+        if (lastActiveElement) {
+          const activeElement = lastActiveElement;
+          console.log("fillContent", message, activeElement);
 
-        console.log("fillContent", message, activeElement);
+          if (isInputElement(activeElement)) {
+            const inputElement = activeElement as HTMLInputElement;
 
-        if (!activeElement) {
-          return;
-        }
+            const start = inputElement.selectionStart ?? 0;
+            const end = inputElement.selectionEnd ?? 0;
+            const currentValue = inputElement.value;
 
-        if (
-          activeElement.tagName === "INPUT" ||
-          activeElement.tagName === "TEXTAREA"
-        ) {
-          const inputElement = activeElement as HTMLInputElement;
+            // Insert content at cursor position
+            inputElement.value =
+              currentValue.slice(0, start) +
+              message.content +
+              currentValue.slice(end);
 
-          const start = inputElement.selectionStart ?? 0;
-          const end = inputElement.selectionEnd ?? 0;
-          const currentValue = inputElement.value;
+            // Move cursor to end of inserted content
+            inputElement.setSelectionRange(
+              start + message.content.length,
+              start + message.content.length
+            );
 
-          // Insert content at cursor position
-          inputElement.value =
-            currentValue.slice(0, start) +
-            message.content +
-            currentValue.slice(end);
+            const event = new Event("input", { bubbles: true });
 
-          // Move cursor to end of inserted content
-          inputElement.setSelectionRange(
-            start + message.content.length,
-            start + message.content.length
-          );
+            activeElement.dispatchEvent(event);
+          } else if (isContentEditableElement(activeElement)) {
+            console.log("contentEditableElement", activeElement);
 
-          const event = new Event("input", { bubbles: true });
+            activeElement.append(message.content);
+          }
+        } else {
+          const activeElement = document.activeElement;
 
-          activeElement.dispatchEvent(event);
-        }
-        // Handle contenteditable elements
-        else if ((activeElement as HTMLElement).isContentEditable) {
-          const selection = window.getSelection();
-
-          if (!selection) {
+          if (!activeElement) {
             return;
           }
 
-          const range = selection.getRangeAt(0);
+          if (isInputElement(activeElement)) {
+            const inputElement = activeElement as HTMLInputElement;
 
-          // Delete any selected text
-          range.deleteContents();
+            const start = inputElement.selectionStart ?? 0;
+            const end = inputElement.selectionEnd ?? 0;
+            const currentValue = inputElement.value;
 
-          // Insert new content at cursor position
-          const textNode = document.createTextNode(message.content);
-          range.insertNode(textNode);
+            // Insert content at cursor position
+            inputElement.value =
+              currentValue.slice(0, start) +
+              message.content +
+              currentValue.slice(end);
 
-          // Move cursor to end of inserted content
-          range.setStartAfter(textNode);
-          range.setEndAfter(textNode);
-          selection.removeAllRanges();
+            // Move cursor to end of inserted content
+            inputElement.setSelectionRange(
+              start + message.content.length,
+              start + message.content.length
+            );
 
-          const event = new InputEvent("input", {
-            bubbles: true,
-            cancelable: true,
-          });
+            const event = new Event("input", { bubbles: true });
 
-          activeElement.dispatchEvent(event);
+            activeElement.dispatchEvent(event);
+          }
+          // Handle contenteditable elements
+          else if ((activeElement as HTMLElement).isContentEditable) {
+            const selection = window.getSelection();
+
+            if (!selection) {
+              return;
+            }
+
+            const range = selection.getRangeAt(0);
+
+            console.log("range", range);
+
+            // Delete any selected text
+            range.deleteContents();
+
+            // Insert new content at cursor position
+            const textNode = document.createTextNode(message.content);
+            range.insertNode(textNode);
+
+            // Move cursor to end of inserted content
+            range.setStartAfter(textNode);
+            range.setEndAfter(textNode);
+            selection.removeAllRanges();
+
+            const event = new InputEvent("input", {
+              bubbles: true,
+              cancelable: true,
+            });
+
+            activeElement.dispatchEvent(event);
+          }
         }
       }
     });
@@ -82,7 +134,12 @@ export default defineContentScript({
         // Create a root on the UI container and render a component
         const root = ReactDOM.createRoot(container);
         root.render(
-          <Popup>
+          <Popup
+            onPopupOpen={(element) => {
+              console.log("popupOpen", element);
+              lastActiveElement = element;
+            }}
+          >
             <Menu node={<div>Hey</div>}>
               {LANGUAGES.map((language) => (
                 <MenuItem

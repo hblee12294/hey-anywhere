@@ -20,8 +20,6 @@ import {
   useListItem,
   useListNavigation,
   useMergeRefs,
-  useRole,
-  useTypeahead,
 } from "@floating-ui/react";
 import {
   createContext,
@@ -103,7 +101,6 @@ export const MenuComponent = forwardRef<
     toggle: !isNested,
     ignoreMouse: isNested,
   });
-  const role = useRole(context, { role: "menu" });
   const dismiss = useDismiss(context, { bubbles: true });
   const listNavigation = useListNavigation(context, {
     listRef: elementsRef,
@@ -111,14 +108,9 @@ export const MenuComponent = forwardRef<
     nested: isNested,
     onNavigate: setActiveIndex,
   });
-  const typeahead = useTypeahead(context, {
-    listRef: labelsRef,
-    onMatch: isOpen ? setActiveIndex : undefined,
-    activeIndex,
-  });
 
   const { getReferenceProps, getFloatingProps, getItemProps } = useInteractions(
-    [hover, click, role, dismiss, listNavigation, typeahead]
+    [hover, click, dismiss, listNavigation]
   );
 
   // Event emitter allows you to communicate across tree components.
@@ -163,7 +155,6 @@ export const MenuComponent = forwardRef<
             : parent.activeIndex === item.index
             ? 0
             : -1,
-          role: isNested ? "menuitem" : undefined,
           "data-open": isOpen ? "" : undefined,
           "data-nested": isNested ? "" : undefined,
           "data-focus-inside": hasFocusInside ? "" : undefined,
@@ -197,11 +188,12 @@ export const MenuComponent = forwardRef<
                 modal={false}
                 initialFocus={isNested ? -1 : 0}
                 returnFocus={!isNested}
+                disabled={true}
               >
                 <div
                   ref={refs.setFloating}
                   className="Menu"
-                  style={floatingStyles}
+                  style={{ ...floatingStyles, zIndex: 2000 }}
                   {...getFloatingProps()}
                 >
                   {children}
@@ -233,7 +225,6 @@ export const MenuItem = forwardRef<
     cloneElement(node, {
       ...(props as any),
       ref: useMergeRefs([item.ref, forwardedRef]),
-      role: "menuitem",
       className: "MenuItem",
       tabIndex: isActive ? 0 : -1,
       ...menu.getItemProps({

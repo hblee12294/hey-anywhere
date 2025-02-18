@@ -1,5 +1,6 @@
 import ReactDOM from "react-dom/client";
 import { Popup } from "@/components/Popup.tsx";
+import { Menu, MenuItem } from "@/components/DropdownMenu.tsx";
 
 export default defineContentScript({
   matches: ["<all_urls>"],
@@ -78,9 +79,23 @@ export default defineContentScript({
         // Create a root on the UI container and render a component
         const root = ReactDOM.createRoot(container);
         root.render(
-          <div>
+          <div id="fill-content-popup">
             <Popup>
-              <button>Hello</button>
+              <button onClick={() => console.log("Hello")}>Hello</button>
+
+              <Menu label="Edit">
+                <MenuItem label="Undo" onClick={() => console.log("Undo")} />
+                <MenuItem label="Redo" disabled />
+                <Menu label="Copy as">
+                  <MenuItem label="Text" />
+                  <MenuItem label="Video" />
+                  <Menu label="Image">
+                    <MenuItem label=".png" />
+                    <MenuItem label=".jpg" />
+                  </Menu>
+                  <MenuItem label="Audio" />
+                </Menu>
+              </Menu>
             </Popup>
           </div>
         );

@@ -18,7 +18,6 @@ import {
   useInteractions,
   FloatingPortal,
   FloatingFocusManager,
-  FloatingOverlay,
 } from "@floating-ui/react";
 
 export const Popup = forwardRef<
@@ -26,8 +25,6 @@ export const Popup = forwardRef<
   React.HTMLProps<HTMLButtonElement>
 >(({ children }, forwardedRef) => {
   const [isOpen, setIsOpen] = useState(false);
-
-  const allowMouseUpCloseRef = useRef(false);
 
   const { refs, floatingStyles, context } = useFloating({
     open: isOpen,
@@ -39,8 +36,7 @@ export const Popup = forwardRef<
       }),
       shift({ padding: 10 }),
     ],
-    placement: "right-start",
-    strategy: "fixed",
+    placement: "top",
     whileElementsMounted: autoUpdate,
   });
 
@@ -50,82 +46,73 @@ export const Popup = forwardRef<
   const { getFloatingProps, getItemProps } = useInteractions([role, dismiss]);
 
   useEffect(() => {
-    let timeout: number;
+    function onMouseUp(e: MouseEvent) {
+      const target = e.target as HTMLElement;
 
-    function onContextMenu(e: MouseEvent) {
-      e.preventDefault();
+      if (refs.floating.current?.contains(target as Element | null)) {
+        return;
+      }
 
-      refs.setPositionReference({
-        getBoundingClientRect() {
-          return {
-            width: 0,
-            height: 0,
-            x: e.clientX,
-            y: e.clientY,
-            top: e.clientY,
-            right: e.clientX,
-            bottom: e.clientY,
-            left: e.clientX,
-          };
-        },
-      });
+      if (
+        target.isContentEditable ||
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA"
+      ) {
+        refs.setPositionReference({
+          getBoundingClientRect() {
+            return {
+              width: 0,
+              height: 0,
+              x: e.clientX,
+              y: e.clientY,
+              top: e.clientY,
+              right: e.clientX,
+              bottom: e.clientY,
+              left: e.clientX,
+            };
+          },
+        });
 
-      setIsOpen(true);
-      clearTimeout(timeout);
-
-      allowMouseUpCloseRef.current = false;
-      timeout = window.setTimeout(() => {
-        allowMouseUpCloseRef.current = true;
-      }, 300);
-    }
-
-    function onMouseUp() {
-      if (allowMouseUpCloseRef.current) {
-        setIsOpen(false);
+        setIsOpen(true);
       }
     }
 
-    document.addEventListener("contextmenu", onContextMenu);
     document.addEventListener("mouseup", onMouseUp);
+
     return () => {
-      document.removeEventListener("contextmenu", onContextMenu);
       document.removeEventListener("mouseup", onMouseUp);
-      clearTimeout(timeout);
     };
   }, [refs]);
 
   return (
     <FloatingPortal>
       {isOpen && (
-        <FloatingOverlay lockScroll>
-          <FloatingFocusManager context={context} initialFocus={refs.floating}>
-            <div
-              className="ContextMenu"
-              ref={refs.setFloating}
-              style={floatingStyles}
-              {...getFloatingProps()}
-            >
-              {Children.map(
-                children,
-                (child) =>
-                  isValidElement(child) &&
-                  cloneElement(
-                    child,
-                    getItemProps({
-                      //   onClick() {
-                      //     child.props.onClick?.();
-                      //     setIsOpen(false);
-                      //   },
-                      //   onMouseUp() {
-                      //     child.props.onClick?.();
-                      //     setIsOpen(false);
-                      //   },
-                    })
-                  )
-              )}
-            </div>
-          </FloatingFocusManager>
-        </FloatingOverlay>
+        <FloatingFocusManager context={context} initialFocus={refs.floating}>
+          <div
+            ref={refs.setFloating}
+            style={floatingStyles}
+            {...getFloatingProps()}
+          >
+            {Children.map(
+              children,
+              (child) =>
+                isValidElement(child) &&
+                cloneElement(
+                  child,
+                  getItemProps({
+                    //   onClick() {
+                    //     child.props.onClick?.();
+                    //     setIsOpen(false);
+                    //   },
+                    //   onMouseUp() {
+                    //     child.props.onClick?.();
+                    //     setIsOpen(false);
+                    //   },
+                  })
+                )
+            )}
+          </div>
+        </FloatingFocusManager>
       )}
     </FloatingPortal>
   );

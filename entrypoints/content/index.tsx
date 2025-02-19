@@ -33,7 +33,6 @@ export default defineContentScript({
       if (message.action === "fillContent") {
         if (lastActiveElement) {
           const activeElement = lastActiveElement;
-          console.log("fillContent", message, activeElement);
 
           if (isInputElement(activeElement)) {
             const inputElement = activeElement as HTMLInputElement;
@@ -58,8 +57,6 @@ export default defineContentScript({
 
             activeElement.dispatchEvent(event);
           } else if (isContentEditableElement(activeElement)) {
-            console.log("contentEditableElement", activeElement);
-
             activeElement.append(message.content);
           }
         } else {
@@ -102,8 +99,6 @@ export default defineContentScript({
 
             const range = selection.getRangeAt(0);
 
-            console.log("range", range);
-
             // Delete any selected text
             range.deleteContents();
 
@@ -136,7 +131,6 @@ export default defineContentScript({
         root.render(
           <Popup
             onPopupOpen={(element) => {
-              console.log("popupOpen", element);
               lastActiveElement = element;
             }}
           >

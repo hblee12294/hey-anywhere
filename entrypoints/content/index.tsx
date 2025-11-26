@@ -129,28 +129,35 @@ export default defineContentScript({
       onMount: (container) => {
         // Create a root on the UI container and render a component
         const root = ReactDOM.createRoot(container);
-        root.render(
-          <Popup
-            onPopupOpen={(element) => {
-              lastActiveElement = element;
-            }}
-          >
-            <Menu node={<div>Hey</div>}>
-              {LANGUAGES.map((language) => (
-                <MenuItem
-                  node={<div key={language}>{language}</div>}
-                  onClick={() => {
-                    // Send message to background script to get random content
-                    browser.runtime.sendMessage({
-                      action: "requestContent",
-                      language: language,
-                    });
-                  }}
-                />
-              ))}
-            </Menu>
-          </Popup>
-        );
+
+        const ContentApp = () => {
+          const languagesToShow = LANGUAGES;
+
+          return (
+            <Popup
+              onPopupOpen={(element) => {
+                lastActiveElement = element;
+              }}
+            >
+              <Menu node={<div>Hey</div>}>
+                {languagesToShow.map((language) => (
+                  <MenuItem
+                    node={<div key={language}>{language}</div>}
+                    onClick={() => {
+                      // Send message to background script to get random content
+                      browser.runtime.sendMessage({
+                        action: "requestContent",
+                        language: language,
+                      });
+                    }}
+                  />
+                ))}
+              </Menu>
+            </Popup>
+          );
+        };
+
+        root.render(<ContentApp />);
         return root;
       },
       onRemove: (root) => {

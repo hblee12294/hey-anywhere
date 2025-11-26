@@ -19,6 +19,7 @@ import {
   FloatingPortal,
   FloatingFocusManager,
 } from "@floating-ui/react";
+import { enableLongPressStorage } from "@/utils/storage";
 
 interface PopupProps {
   onPopupOpen?: (element: HTMLElement) => void;
@@ -51,12 +52,20 @@ export const Popup = forwardRef<
 
   const { getFloatingProps, getItemProps } = useInteractions([dismiss]);
 
+  const [enableLongPress, setEnableLongPress] = useState(true);
+
+  useEffect(() => {
+    enableLongPressStorage.getValue().then(setEnableLongPress);
+    return enableLongPressStorage.watch(setEnableLongPress);
+  }, []);
+
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let startX = 0;
     let startY = 0;
 
     function onMouseDown(e: MouseEvent) {
+      if (!enableLongPress) return;
       if (e.button !== 0) return;
 
       const target = e.target as HTMLElement;
@@ -126,7 +135,7 @@ export const Popup = forwardRef<
       document.removeEventListener("mouseup", onMouseUp);
       if (timer) clearTimeout(timer);
     };
-  }, [refs, onPopupOpen]);
+  }, [refs, onPopupOpen, enableLongPress]);
 
   return (
     <FloatingPortal>

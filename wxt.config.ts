@@ -5,6 +5,6 @@ export default defineConfig({
   extensionApi: "chrome",
   modules: ["@wxt-dev/module-react"],
   manifest: {
-    permissions: ["contextMenus", "activeTab"],
+    permissions: ["contextMenus", "activeTab", "storage"],
   },
 });

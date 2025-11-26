@@ -2,6 +2,7 @@ import ReactDOM from "react-dom/client";
 import { Popup } from "@/components/Popup.tsx";
 import { Menu, MenuItem } from "@/components/DropdownMenu.tsx";
 import { LANGUAGES } from "@/data";
+import "@/components/styles.css";
 
 function isInputElement(
   element: Element | null

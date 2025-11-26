@@ -33,7 +33,7 @@ export const Popup = forwardRef<
 >(({ children, onPopupOpen }, forwardedRef) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const { refs, floatingStyles, context } = useFloating({
+  const { refs, floatingStyles, context, isPositioned } = useFloating({
     open: isOpen,
     onOpenChange: setIsOpen,
     middleware: [
@@ -134,7 +134,11 @@ export const Popup = forwardRef<
         <FloatingFocusManager context={context} disabled={true}>
           <div
             ref={refs.setFloating}
-            style={{ ...floatingStyles, zIndex: 1000 }}
+            style={{
+              ...floatingStyles,
+              zIndex: 1000,
+              opacity: isPositioned ? 1 : 0,
+            }}
             {...getFloatingProps()}
           >
             {Children.map(

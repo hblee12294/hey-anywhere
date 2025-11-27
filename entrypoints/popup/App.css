@@ -7,6 +7,18 @@
   background-color: #242424;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+}
+
 body {
   margin: 0;
   min-width: 300px;
@@ -14,6 +26,7 @@ body {
 }
 
 .container {
+  width: 100%;
   padding: 16px;
   display: flex;
   flex-direction: column;

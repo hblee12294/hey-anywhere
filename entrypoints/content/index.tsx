@@ -2,6 +2,7 @@ import ReactDOM from "react-dom/client";
 import { Popup } from "@/components/Popup.tsx";
 import { Menu, MenuItem } from "@/components/DropdownMenu.tsx";
 import { LANGUAGES } from "@/data";
+import { capitalize } from "@/utils/capitalize";
 import "@/components/styles.css";
 
 function isInputElement(
@@ -148,7 +149,7 @@ export default defineContentScript({
               >
                 {languagesToShow.map((language) => (
                   <MenuItem
-                    node={<div key={language}>{language}</div>}
+                    node={<div key={language}>{capitalize(language)}</div>}
                     onClick={() => {
                       // Send message to background script to get random content
                       browser.runtime.sendMessage({

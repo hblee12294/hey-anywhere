@@ -1,5 +1,6 @@
 import { LANGUAGES } from "@/data";
 import type { Language } from "@/types";
+import { capitalize } from "@/utils/capitalize";
 
 export default defineBackground(() => {
   browser.runtime.onInstalled.addListener(() => {
@@ -13,7 +14,7 @@ export default defineBackground(() => {
       chrome.contextMenus.create({
         id: `hey_${lang}`,
         parentId: "say_hey",
-        title: lang.charAt(0).toUpperCase() + lang.slice(1),
+        title: capitalize(lang),
         contexts: ["editable"],
       });
     });

@@ -23,6 +23,7 @@ import { enableLongPressStorage } from "@/utils/storage";
 
 interface PopupProps {
   onPopupOpen?: (element: HTMLElement) => void;
+  onPopupClose?: () => void;
 }
 
 const LONG_PRESS_DURATION = 500;
@@ -31,7 +32,7 @@ const MOVEMENT_THRESHOLD = 5;
 export const Popup = forwardRef<
   HTMLButtonElement,
   React.HTMLProps<HTMLButtonElement> & PopupProps
->(({ children, onPopupOpen }, forwardedRef) => {
+>(({ children, onPopupOpen, onPopupClose }, forwardedRef) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const { refs, floatingStyles, context, isPositioned } = useFloating({
@@ -58,6 +59,16 @@ export const Popup = forwardRef<
     enableLongPressStorage.getValue().then(setEnableLongPress);
     return enableLongPressStorage.watch(setEnableLongPress);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      onPopupClose?.();
+    }
+  }, [isOpen, onPopupClose]);
+
+  const closePopup = () => {
+    setIsOpen(false);
+  };
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -153,7 +164,11 @@ export const Popup = forwardRef<
             {Children.map(
               children,
               (child) =>
-                isValidElement(child) && cloneElement(child, getItemProps())
+                isValidElement(child) &&
+                cloneElement(child, {
+                  ...getItemProps(),
+                  closePopup,
+                } as any)
             )}
           </div>
         </FloatingFocusManager>

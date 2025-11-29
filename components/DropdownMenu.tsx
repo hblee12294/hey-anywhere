@@ -45,6 +45,7 @@ const MenuContext = createContext<{
   setActiveIndex: Dispatch<SetStateAction<number | null>>;
   setHasFocusInside: Dispatch<SetStateAction<boolean>>;
   isOpen: boolean;
+  closePopup?: () => void;
 }>({
   getItemProps: () => ({}),
   activeIndex: null,
@@ -57,12 +58,13 @@ interface MenuProps {
   node: ReactNode;
   nested?: boolean;
   children?: ReactNode;
+  closePopup?: () => void;
 }
 
 export const MenuComponent = forwardRef<
   HTMLElement,
   MenuProps & HTMLProps<HTMLElement>
->(({ children, node, ...props }, forwardedRef) => {
+>(({ children, node, closePopup, ...props }, forwardedRef) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasFocusInside, setHasFocusInside] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
@@ -178,6 +180,7 @@ export const MenuComponent = forwardRef<
           getItemProps,
           setHasFocusInside,
           isOpen,
+          closePopup,
         }}
       >
         <FloatingList elementsRef={elementsRef} labelsRef={labelsRef}>
@@ -231,6 +234,7 @@ export const MenuItem = forwardRef<
         onClick(event: MouseEvent<HTMLButtonElement>) {
           props.onClick?.(event);
           tree?.events.emit("click");
+          menu.closePopup?.();
         },
         onFocus(event: FocusEvent<HTMLButtonElement>) {
           props.onFocus?.(event);

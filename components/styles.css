@@ -41,6 +41,49 @@
   background: rgba(255, 255, 255, 0.5);
 }
 
+.FillButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #1f2937;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  user-select: none;
+}
+
+.FillButton:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.FillButton:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .FillButton {
+    background: rgba(50, 50, 50, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #e5e7eb;
+  }
+
+  .FillButton:hover {
+    background: rgba(60, 60, 60, 1);
+  }
+}
 /* Dark mode support if needed in future, but sticking to light premium for now */
 @media (prefers-color-scheme: dark) {
   .Menu {

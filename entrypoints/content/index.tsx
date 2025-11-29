@@ -139,7 +139,13 @@ export default defineContentScript({
                 lastActiveElement = element;
               }}
             >
-              <Menu node={<div>Hey</div>}>
+              <Menu
+                node={
+                  <div>
+                    <button className="FillButton">Fill</button>
+                  </div>
+                }
+              >
                 {languagesToShow.map((language) => (
                   <MenuItem
                     node={<div key={language}>{language}</div>}

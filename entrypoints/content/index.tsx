@@ -30,6 +30,7 @@ export default defineContentScript({
 
   main(ctx) {
     let lastActiveElement: HTMLElement | null = null;
+    let lastRange: Range | null = null;
 
     browser.runtime.onMessage.addListener((message) => {
       if (message.action === "fillContent") {
@@ -59,7 +60,13 @@ export default defineContentScript({
 
             activeElement.dispatchEvent(event);
           } else if (isContentEditableElement(activeElement)) {
-            activeElement.append(message.content);
+            activeElement.focus();
+            if (lastRange) {
+              const selection = window.getSelection();
+              selection?.removeAllRanges();
+              selection?.addRange(lastRange);
+            }
+            document.execCommand("insertText", false, message.content);
           }
         } else {
           const activeElement = document.activeElement;
@@ -93,32 +100,7 @@ export default defineContentScript({
           }
           // Handle contenteditable elements
           else if ((activeElement as HTMLElement).isContentEditable) {
-            const selection = window.getSelection();
-
-            if (!selection) {
-              return;
-            }
-
-            const range = selection.getRangeAt(0);
-
-            // Delete any selected text
-            range.deleteContents();
-
-            // Insert new content at cursor position
-            const textNode = document.createTextNode(message.content);
-            range.insertNode(textNode);
-
-            // Move cursor to end of inserted content
-            range.setStartAfter(textNode);
-            range.setEndAfter(textNode);
-            selection.removeAllRanges();
-
-            const event = new InputEvent("input", {
-              bubbles: true,
-              cancelable: true,
-            });
-
-            activeElement.dispatchEvent(event);
+            document.execCommand("insertText", false, message.content);
           }
         }
       }
@@ -138,6 +120,10 @@ export default defineContentScript({
             <Popup
               onPopupOpen={(element) => {
                 lastActiveElement = element;
+                const selection = window.getSelection();
+                if (selection && selection.rangeCount > 0) {
+                  lastRange = selection.getRangeAt(0);
+                }
               }}
             >
               <Menu
